@@ -1,7 +1,23 @@
 import React from 'react'
 import { Link } from "react-router-dom";
+import axios from "axios";
+import useSWR, {useSWRConfig} from "swr";
 
 const ProductList = () => {
+    const {mutate} = useSWRConfig();
+    const fetcher = async () => {
+        const response = await axios.get('http://localhost:5000/products');
+        return response.data;
+    };
+
+    const {data} = useSWR('products', fetcher);
+    if (!data) return <h2>Loading...</h2>;
+
+    const deleteProduct = async (productId) => {
+        await axios.delete(`http://localhost:5000/products/${productId}`);
+        mutate("products");
+    }
+
   return (
     <div className='flex flex-col mt-5'>
         <div className='w-full'>
@@ -17,15 +33,18 @@ const ProductList = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className='bg-white border-b'>
-                            <th className='py-3 px-1 text-center'>1</th>
-                            <th className='py-3 px-6 font-medium text-gray-900'>Product 1</th>
-                            <th className='py-3 px-6'>435</th>
+                        {data.map((product, index) => (
+                            <tr className='bg-white border-b' key={product.id}>
+                            <th className='py-3 px-1 text-center'>{index+1}</th>
+                            <th className='py-3 px-6 font-medium text-gray-900'>{product.name}</th>
+                            <th className='py-3 px-6'>{product.price}</th>
                             <th className='py-3 px-1 text-center'>
-                                <Link to={`/edit/`} className='font-medium bg-blue-400 hover:bg-blue-500 px-3 py-1 rounded text-white mr-1' >Edit</Link>
-                                <button className='font-medium bg-red-400 hover:bg-red-500 px-3 py-1 rounded text-white' >Edit</button>
+                                <Link to={`/edit/${product.id}`} className='font-medium bg-blue-400 hover:bg-blue-500 px-3 py-1 rounded text-white mr-1' >Edit</Link>
+                                <button onClick={() => deleteProduct(product.id)} className='font-medium bg-red-400 hover:bg-red-500 px-3 py-1 rounded text-white' >Delete</button>
                             </th>
                         </tr>
+                        ))}
+                        
                     </tbody>
                 </table>
             </div>
